@@ -1,0 +1,119 @@
+%% Define the problem
+% Constants
+Vf = 20;                            % UAV flight speed
+t0 = 0; tseg = 5;                   % Initial and segment time
+dt = 0.1;                           % sampling interval
+%--------------------------------------
+% Double Integrator model
+%--------------------------------------
+A = [1 dt 0 0;
+       0 1 0 0;
+       0 0 1 dt;
+       0 0 0 1];                    % state transition matrix
+B = [0;dt;0;dt];                  % control transition matrix
+C = [0 0 1 0];                      % output selection matrix
+% Discretisation limits
+npts(1) = floor((tseg-t0)/dt);      % number of optimisation points, seg1
+npts(2) = floor(1.5*npts(1));       % number of optimisation points, seg2
+npts(3) = npts(1);                  % number of optimisation points, seg3
+%% Trajectory generation
+xd = [0;0;0;0];                     % placeholder for desired trajectory
+lim = 20;                           % maximum lateral offset
+% Calculate the array of boundary conditions 'bca' defining trajectory polynomials for each segment
+
+        % ------ INSERT YOUR CODE HERE ------
+bca = [0 0 lim 0;
+       lim 0 -lim 0;
+      -lim 0 0 0];
+nseg = 3;                           % number of polynomial segments
+% Loop over each trajectory segment
+for jj=1:nseg
+    tf = floor(npts(jj))*dt;        % segment duration (s)
+    bc = bca(jj,:);
+% Calculate the polynomial coefficient matrix 'Phi'
+% Calculate the boundary condition vector 'b'
+    
+        % ------ INSERT YOUR CODE HERE ------
+        Phi = [1 0 0 0;
+               0 1 0 0;
+               1 tf tf^2 tf^3;
+               0 1 2*tf 3*(tf^2)];
+        
+        b = bca(jj,:);
+        b = b.';
+    a = Phi\b;
+    for ii=1:floor(npts(jj))
+        tau = (ii-1)* dt; 
+        % Now calculate the trajectory coordinates using polynomials
+        % The variables to be calculated include position (xp and yp) and velocity (xpd and ypd) 
+        % yp = polynomial 1 with respect to a and tau
+        % ypd = polynomial 2 with respect to a and tau
+        % xpd = function of Vf and ypd
+        % xp = integration of xpd
+       
+        % ------ INSERT YOUR CODE HERE ------
+        ypd = a(2) + 2*a(3)*tau + 3*a(4)*(tau^2);
+        xpd= sqrt(Vf^2 - ypd^2);
+
+        yp = a(1) + a(2)*tau + a(3)*(tau^2) + a(4)*(tau^3);
+        xp = xd(1,end) + (xpd*dt);
+        
+        % append the trajectory array
+        xd = [xd [xp;xpd;yp;ypd]];
+    end
+end
+%% Solve the optimisation
+% Define the initial conditions
+x0 = [0;Vf;0;0];
+CC = C'*C;
+tp = sum(npts);
+tend = tp*dt;
+t = t0:dt:tend;
+U0 = zeros(tp,1);
+Ulower = -50*ones(tp,1);
+Uupper = 50*ones(tp,1);
+% Overwrite some of the default optimisation properties
+options = optimset('TolFun',1e-3,...
+                   'Display','iter',...
+                   'MaxFunEvals',50000);
+%---------------------------------------
+% Run the optimisation!
+%---------------------------------------
+% Call fmincon using an anonymous function to pass the extra parameters defined in the cost function: costFun(U,A,B,x0,CC,dt,tp,Xd).
+% Return the optimal values in 'U_opt'.
+% Remember to include the upper and lower constraints.   
+
+% ------ INSERT YOUR CODE HERE ------
+U_opt = fmincon(@(U)costFun(U,A,B,x0,CC,dt,tp,xd),U0,[],[],[],[],Ulower,Uupper,[],options); 
+    
+%% display the results
+% Calculate the complete trajectory using the optimal control vector
+xv = x0;
+x = x0;
+for jj=1:tp
+    x = A*x + B * U_opt(jj,1);
+    xv = [xv x];
+end
+% Now plot the UAV position time-series
+figure(1)
+plot(t,xv(3,:)); hold on;
+plot(t(1:length(xd(1,:))),xd(3,:),'--g');
+legend('Planned optimal trajectory','Polynomial generated trajectory');
+xlabel('t (s)');
+ylabel('y (m)');
+grid on; hold off;
+% and the control inputs
+figure(2)
+stairs(t,[U_opt;U_opt(end)],'r'); grid on;
+xlabel('t (s)');
+ylabel('u (N)');
+%% Calculate the cost function
+function J = costFun(U,A,B,x0,CC,dt,tp,xd)
+    J = 0.0;
+    x = x0;
+    for kk=1:tp-1
+        x = A*x + B*U(kk,1);
+        diff = (xd(:,kk+1) - x)'*CC*(xd(:,kk+1) - x)*dt;
+        J = J + diff;
+    end
+end
