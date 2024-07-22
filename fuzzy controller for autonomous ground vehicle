@@ -1,0 +1,103 @@
+[System]
+Name='fuzzy car controller 3'
+Type='mamdani'
+Version=2.0
+NumInputs=2
+NumOutputs=2
+NumRules=9
+AndMethod='min'
+OrMethod='max'
+ImpMethod='min'
+AggMethod='max'
+DefuzzMethod='mom'
+
+[Input1]
+Name='Left Sensor'
+Range=[0 1.1]
+NumMFs=3
+MF1='Too Close':'trapmf',[-0.2 0 0.4 0.55]
+MF2='Close':'trapmf',[0.5 0.55 0.65 0.75]
+MF3='safe':'trapmf',[0.7 0.8 1.1 1.2]
+
+[Input2]
+Name='Right Sensor'
+Range=[0 1.1]
+NumMFs=3
+MF1='Too Close':'trapmf',[-0.2 0 0.4 0.55]
+MF2='Close':'trapmf',[0.5 0.55 0.65 0.75]
+MF3='safe':'trapmf',[0.7 0.8 1.1 1.2]
+
+[Output1]
+Name='Motor Left'
+Range=[-7 7]
+NumMFs=3
+MF1='Reverse':'trapmf',[-7 -7 -3 -1]
+MF2='Off':'trapmf',[-2 0 0 2]
+MF3='Forward':'trapmf',[1 3 7 7]
+
+[Output2]
+Name='Motor Right'
+Range=[-7 7]
+NumMFs=3
+MF1='Reverse':'trapmf',[-7 -7 -3 -1]
+MF2='Off':'trapmf',[-2 0 0 2]
+MF3='Forward':'trapmf',[1 3 7 7]
+
+[Rules]
+3 2, 2 3 (1) : 1
+3 1, 1 3 (1) : 1
+2 3, 3 2 (1) : 1
+2 2, 1 3 (1) : 1
+2 1, 1 3 (1) : 1
+1 3, 3 1 (1) : 1
+1 2, 3 1 (1) : 1
+1 1, 1 1 (1) : 1
+3 3, 3 3 (0.55) : 1
+
+
+[System]
+Name='angle error adjuster'
+Type='mamdani'
+Version=2.0
+NumInputs=1
+NumOutputs=2
+NumRules=5
+AndMethod='min'
+OrMethod='max'
+ImpMethod='min'
+AggMethod='max'
+DefuzzMethod='centroid'
+
+[Input1]
+Name='angle error'
+Range=[-3.14285714285714 3.14285714285714]
+NumMFs=5
+MF1='high positive':'trapmf',[0.349 0.4363 3.14285714285714 3.14285714285714]
+MF2='near positive':'trapmf',[0.0698 0.1571 0.349 0.4363]
+MF3='straight':'trimf',[-0.0873 0 0.0873]
+MF4='near negative':'trapmf',[-0.4363 -0.349 -0.1571 -0.069]
+MF5='high negative':'trapmf',[-3.14285714285714 -3.14285714285714 -0.4363 -0.349]
+
+[Output1]
+Name='Motor Left'
+Range=[-7 7]
+NumMFs=3
+MF1='Reverse':'trapmf',[-7 -7 -3 -1]
+MF2='Off':'trapmf',[-2 0 0 2]
+MF3='Forward':'trapmf',[1 3 7 7]
+
+[Output2]
+Name='Motor Right'
+Range=[-7 7]
+NumMFs=3
+MF1='Reverse':'trapmf',[-7 -7 -3 -1]
+MF2='Off':'trapmf',[-2 0 0 2]
+MF3='Forward':'trapmf',[1 3 7 7]
+
+[Rules]
+1, 3 1 (1) : 1
+2, 3 2 (1) : 1
+3, 3 3 (1) : 1
+4, 2 3 (1) : 1
+5, 1 3 (1) : 1
+
