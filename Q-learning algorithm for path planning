@@ -1,0 +1,82 @@
+% Define the reward/connection graph
+        
+r = [-1 0 -1 0 -1 -1;
+    -1 -1 0 -1 -1 -1;
+    -1 0 -1 0 -1 100;
+     0 -1 0 -1 0 -1;
+    -1 -1 -1 0 -1 100;
+    -1 -1 0 -1 0 100];  % ------ INSERT YOUR CODE HERE ------
+
+% Initialize Q matrix
+q = zeros(size(r));
+
+% Core algorithm parameters
+gamma = 0.8;% Learning parameter
+n_episodes = 1000;% Number of training cycles
+n_states = 6;% Number of states
+goal_value = 100;% Goal state
+
+% Secondary parameters
+epsilon = 0.5;% Epsilon is used to determine the balance between the algorithm's 
+              % exploration of new strategies and utilization of known optimal strategies
+rng(2024); % Set random seed for reproducibility 
+
+for e = 1:n_episodes
+    current_state = randi(n_states);
+    goal = false;
+
+    while ~goal
+        % Epsilon greedy strategy to select an action
+        if rand() < epsilon
+            actions = find(r(current_state, :) >= 0);
+            action = actions(randi(length(actions)));
+        else
+            [~, action] = max(q(current_state, :));
+        end
+
+        % Determine whether the next action is feasible
+        
+        if r(current_state, action) >= 0; % ------ INSERT YOUR CODE HERE ------ 
+         next_state = action; 
+        
+         % Update Q matrix
+        q(current_state, action) = r(current_state, action) + (gamma * max(q(next_state,:))); % ------ INSERT YOUR CODE HERE ------
+        end   
+
+        % Check if goal state is reached
+        if r(current_state, action) == 100;
+            goal = true;
+        % ------ INSERT YOUR CODE HERE ------
+        end
+        %Update current state
+        current_state =  action; % ------ INSERT YOUR CODE HERE ------
+    end
+end
+
+% matrix normalization
+q = q - min(q(:)); 
+q = q / max(q(:)); 
+
+% display Q matrix
+disp('Q matrix:');
+disp(q);
+
+% Visualize the Q matrix with values
+figure;
+imagesc(q); 
+colormap('jet'); 
+colorbar;
+title('Q Matrix Visualization');
+xlabel('Actions');
+ylabel('States');
+[numRows, numCols] = size(q);
+for row = 1:numRows
+    for col = 1:numCols
+        text(col, row, num2str(q(row, col), '%0.2f'),...
+             'HorizontalAlignment', 'center', ...
+             'VerticalAlignment', 'middle');
+    end
+end
+axis off
+
+
